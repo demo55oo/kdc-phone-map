@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KDC phone map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Figtree:wght@420;560;680&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f3efe4;
+    --ink: #1c1914;
+    --muted: #5e584e;
+    --line: #d9d0c0;
+    --card: #fffdf8;
+    --desk: #1d4e89;
+    --desk-soft: #e7f0f8;
+    --ava: #0d6a4c;
+    --ava-soft: #e5f4ee;
+    --warn: #8a3d12;
+    --warn-soft: #f8efe6;
+    --spare: #6b6458;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: Figtree, sans-serif;
+    background:
+      radial-gradient(1200px 500px at 10% -10%, #efe6d4 0%, transparent 55%),
+      var(--paper);
+    background-attachment: fixed;
+  }
+  body::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    opacity: 0.18;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.55'/></svg>");
+  }
+  main {
+    position: relative;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 22px 72px;
+  }
+  header h1 {
+    font-family: Fraunces, serif;
+    font-weight: 560;
+    font-size: 42px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0 0 8px;
+  }
+  header p.lede {
+    margin: 0;
+    max-width: 68ch;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .answer {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 12px;
+  }
+  .answer article {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+  }
+  .answer article strong {
+    display: block;
+    font-family: Fraunces, serif;
+    font-size: 20px;
+    font-weight: 560;
+    letter-spacing: -0.02em;
+    margin-top: 4px;
+  }
+  .kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 680;
+  }
+  .map {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0 18px;
+    align-items: center;
+  }
+  .root {
+    background: var(--ink);
+    color: #f7f3ea;
+    border-radius: 16px;
+    padding: 18px 16px;
+    min-height: 120px;
+  }
+  .root span {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+  .root strong {
+    display: block;
+    margin-top: 8px;
+    font-family: Fraunces, serif;
+    font-size: 26px;
+    font-weight: 560;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .branches { display: flex; flex-direction: column; gap: 10px; }
+  .branch {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .arm {
+    position: relative;
+    text-align: left;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 12px 12px 14px;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .arm::before {
+    content: "";
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    width: 18px;
+    height: 1px;
+    background: #b7ad9c;
+  }
+  .arm.active { border-color: var(--ink); }
+  .arm b { display: block; font-size: 14px; }
+  .arm small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+  .leaves {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .branch.open .leaves { display: grid; }
+  .leaf {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .leaf em { font-style: normal; font-weight: 680; }
+  .leaf.desk { background: var(--desk-soft); border-color: #c5d7ea; }
+  .leaf.ava { background: var(--ava-soft); border-color: #b7ddd0; }
+  .leaf.warn { background: var(--warn-soft); border-color: #ead4c4; }
+  .detail {
+    margin-top: 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 18px 8px;
+  }
+  .detail h2 {
+    font-family: Fraunces, serif;
+    font-weight: 560;
+    font-size: 28px;
+    margin: 4px 0 8px;
+    letter-spacing: -0.03em;
+  }
+  .detail p { margin: 0 0 12px; line-height: 1.5; max-width: 78ch; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+  .links a {
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 13px;
+    background: #faf7f1;
+  }
+  .links a:hover { border-color: var(--ink); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 16px;
+    font-size: 14px;
+  }
+  th, td { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 680; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 680;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    padding: 2px 7px;
+  }
+  .tag.live { background: var(--desk-soft); color: var(--desk); }
+  .tag.ava { background: var(--ava-soft); color: var(--ava); }
+  .tag.spare { background: #eeeae2; color: var(--spare); }
+  .tag.other { background: var(--warn-soft); color: var(--warn); }
+  footer {
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  @media (max-width: 860px) {
+    .answer, .map, .branch, .leaves { grid-template-columns: 1fr; }
+    .arm::before { display: none; }
+    header h1 { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker">Kelowna Dental Centre · 23 Oct 2026</div>
+    <h1>Who picks up the phone.</h1>
+    <p class="lede">There is no separate AI number. Every live KDC line, including the old Ava test line, hits the same router. The front desk answers during the day. Ava answers after 5pm Pacific, or if the desk does not pick up.</p>
+  </header>
+
+  <section class="answer">
+    <article>
+      <div class="kicker">Number on the website</div>
+      <strong>(250) 860-1414</strong>
+      <p class="lede">Only this number is on kelowna-dental-centre.ca. Hours listed there: 7am–5pm, seven days.</p>
+    </article>
+    <article>
+      <div class="kicker">If you call the “AI” number</div>
+      <strong>The desk picks up</strong>
+      <p class="lede">(778) 924-5838 was Ava’s test bed. It still rings the front desk first.</p>
+    </article>
+    <article>
+      <div class="kicker">The voice itself</div>
+      <strong>Ava · Claude</strong>
+      <p class="lede">Deepgram listens. Claude answers. Deepgram Aura speaks. Not Vapi. Not ElevenLabs.</p>
+    </article>
+  </section>
+
+  <section class="map" aria-label="KDC phone mind map">
+    <div class="root">
+      <span>Caller</span>
+      <strong>Dials a KDC Twilio number</strong>
+    </div>
+    <div class="branches" id="branches">
+      <div class="branch open" data-key="listed">
+        <button class="arm active" type="button">
+          <b>Where the number is listed</b>
+          <small>Website shows one line. Twilio holds the rest.</small>
+        </button>
+        <div class="leaves">
+          <div class="leaf"><em>Public site.</em> (250) 860-1414 on the homepage and the contact page. Email on the site is info@kelowna-dental-centre.ca.</div>
+          <div class="leaf"><em>Not on the site.</em> The Meta line, the Google line, and the old Ava test line exist in Twilio and in their 23 Oct email.</div>
+        </div>
+      </div>
+      <div class="branch" data-key="agent">
+        <button class="arm" type="button">
+          <b>Where the voice agent is</b>
+          <small>Named in the email. Hidden behind the router.</small>
+        </button>
+        <div class="leaves">
+          <div class="leaf ava"><em>Name.</em> Ava. She is their code, on a DigitalOcean droplet, using Pipecat.</div>
+          <div class="leaf"><em>You will not see her in Twilio.</em> Each live number’s voice webhook is the Worker, api.alvero.dental/api/voice/inbound. Ava is the route that Worker chooses.</div>
+          <div class="leaf"><em>Stack.</em> Twilio Media Stream in. Deepgram speech-to-text. Claude. Deepgram Aura text-to-speech.</div>
+          <div class="leaf warn"><em>Mode.</em> after_hours_overflow. She does not front the line.</div>
+        </div>
+      </div>
+      <div class="branch" data-key="who">
+        <button class="arm" type="button">
+          <b>Who picks up</b>
+          <small>Same answer on the main line and the AI line.</small>
+        </button>
+        <div class="leaves">
+          <div class="leaf desk"><em>7:00–17:00 Pacific, all week.</em> Front-desk softphones. People, in the browser, via Twilio Client.</div>
+          <div class="leaf ava"><em>Ava.</em> After 5pm, if every desk is busy, or if nobody answers.</div>
+          <div class="leaf warn"><em>If their router is down.</em> Twilio uses voice.alvero.dental/fallback.xml. If Ava’s health check fails, the caller gets voicemail.</div>
+        </div>
+      </div>
+      <div class="branch" data-key="call">
+        <button class="arm" type="button">
+          <b>How you call</b>
+          <small>One number. The clock decides the voice.</small>
+        </button>
+        <div class="leaves">
+          <div class="leaf desk"><em>Hear the desk.</em> Call (250) 860-1414 between 7am and 5pm Kelowna time.</div>
+          <div class="leaf ava"><em>Hear Ava.</em> Call any live KDC number after 5:00pm Pacific. That is 3:00am your time (UTC+3) until the clocks change. Or call during the day and let it ring through.</div>
+          <div class="leaf warn"><em>Do not expect a direct line.</em> (778) 924-5838 is not a private door to Ava.</div>
+        </div>
+      </div>
+      <div class="branch" data-key="wire">
+        <button class="arm" type="button">
+          <b>Where the integration goes</b>
+          <small>Dentrix during the call. Alvero after it.</small>
+        </button>
+        <div class="leaves">
+          <div class="leaf ava"><em>During the call.</em> Ava uses their own Dentrix bridge. She can match a chart, read visits, confirm one, and add a new appointment.</div>
+          <div class="leaf warn"><em>Limit.</em> The bridge cannot move or cancel. A reschedule would duplicate the visit, so she takes a message instead.</div>
+          <div class="leaf"><em>After the call.</em> A card in the Alvero front-desk channel, a Dentrix office-journal note, a callback with an owner, the recording, and a grade.</div>
+          <div class="leaf"><em>Earlier attempt.</em> Colla (the dental connector people mean by that name is Kolla) did not become this path. This email describes their own bridge.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail" id="detail">
+    <div class="kicker" id="detail-kicker">Listed</div>
+    <h2 id="detail-title">The website publishes one number.</h2>
+    <p id="detail-body">Kelowna Dental Centre, 2033 Gordon Drive, Suite 100. The contact page lists (250) 860-1414, info@kelowna-dental-centre.ca, and 7am–5pm every day. That clock matches the phone router in the email. The ad numbers and the old test line are not printed on the site.</p>
+    <div class="links" id="detail-links"></div>
+    <table>
+      <thead>
+        <tr><th>Number</th><th>What it is</th><th>Who you reach</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>(250) 860-1414</td>
+          <td>Main line. The one on the website. <span class="tag live">Live</span></td>
+          <td>Desk, then Ava</td>
+        </tr>
+        <tr>
+          <td>(778) 760-2286</td>
+          <td>Meta ads <span class="tag live">Live</span></td>
+          <td>Desk, then Ava</td>
+        </tr>
+        <tr>
+          <td>(778) 760-2932</td>
+          <td>Google ads <span class="tag live">Live</span></td>
+          <td>Desk, then Ava</td>
+        </tr>
+        <tr>
+          <td>(778) 924-5838</td>
+          <td>Old Ava test bed <span class="tag ava">Still live</span></td>
+          <td>Desk, then Ava. Not Ava directly.</td>
+        </tr>
+        <tr>
+          <td>(778) 949-4227<br>(236) 244-0081<br>(236) 361-3653</td>
+          <td>NTT lines, a different brand <span class="tag other">Leave alone</span></td>
+          <td>Reach, not Ava</td>
+        </tr>
+        <tr>
+          <td>(236) 506-5659<br>(318) 657-7036<br>(778) 721-4858</td>
+          <td>Unused or a TwiML bin <span class="tag spare">Not Ava</span></td>
+          <td>Nobody at KDC. 4858 still has SMS pointed at their Worker.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    Drawn from their email to Sameer and from kelowna-dental-centre.ca on 23 Oct 2026. The Twilio webhooks have not been opened in this account yet. If you share Twilio access, the check is whether each live number’s voice URL is still api.alvero.dental/api/voice/inbound.
+  </footer>
+</main>
+<script>
+  const briefs = {
+    listed: {
+      kicker: "Where the number is listed",
+      title: "The website publishes one number.",
+      body: "Kelowna Dental Centre, 2033 Gordon Drive, Suite 100. The contact page lists (250) 860-1414, info@kelowna-dental-centre.ca, and 7am–5pm every day. That clock matches the phone router in the email. The ad numbers and the old test line are not printed on the site.",
+      links: [
+        ["KDC contact page", "https://www.kelowna-dental-centre.ca/contact-us/"],
+        ["KDC homepage", "https://www.kelowna-dental-centre.ca/"]
+      ]
+    },
+    agent: {
+      kicker: "Where the voice agent is",
+      title: "Ava sits behind the Worker, not on a number.",
+      body: "Open Twilio and the live KDC numbers should all point their voice webhook at api.alvero.dental/api/voice/inbound. That Cloudflare Worker chooses desk or Ava. Ava herself is a Pipecat pipeline on a DigitalOcean droplet. Twilio streams the audio in. Deepgram turns speech into text, Claude decides, Deepgram Aura speaks back. She is not listed on the website.",
+      links: [
+        ["Twilio Media Streams", "https://www.twilio.com/docs/voice/media-streams"],
+        ["Cloudflare Workers", "https://developers.cloudflare.com/workers/"],
+        ["Pipecat", "https://docs.pipecat.ai/"],
+        ["Deepgram speech-to-text", "https://developers.deepgram.com/docs/stt/getting-started"],
+        ["Deepgram Aura", "https://developers.deepgram.com/docs/tts-models"],
+        ["Claude API", "https://docs.anthropic.com/"]
+      ]
+    },
+    who: {
+      kicker: "Who picks up",
+      title: "Call the AI number and a person still answers first.",
+      body: "(778) 924-5838 started as the Ava test bed. The 23 Oct Twilio map sends it to the same Worker as the main line: desk during 7am–5pm Pacific, Ava only as overflow. The desk phones are Twilio Client in the browser. If the Worker is down, Twilio hits voice.alvero.dental/fallback.xml. If Ava’s process fails its health check, the caller gets voicemail. That check only knows the process is running, not that she can speak.",
+      links: [
+        ["Twilio Client, the desk phones", "https://www.twilio.com/docs/voice/sdks/javascript"],
+        ["Twilio Voice", "https://www.twilio.com/docs/voice"]
+      ]
+    },
+    call: {
+      kicker: "How you call",
+      title: "Use the main line. The hour picks the voice.",
+      body: "Call (250) 860-1414. Before 5:00pm in Kelowna you get the front desk. After 5:00pm Pacific you get Ava. While Pacific is on daylight time, 5:00pm there is 3:00am for you in UTC+3. Calling (778) 924-5838 does the same thing. The spare numbers are not connected to her.",
+      links: [
+        ["KDC contact page", "https://www.kelowna-dental-centre.ca/contact-us/"]
+      ]
+    },
+    wire: {
+      kicker: "Integration",
+      title: "Dentrix on the call. Alvero after the hangup.",
+      body: "Once Ava has checked name and date of birth, their own bridge reads Dentrix and can add an appointment. It cannot reschedule or cancel. She offers two exact times and only says it is booked after the tool confirms. When the call ends, Alvero writes a front-desk card, a chart journal note when one chart matches, and a callback with an owner and a 15–30 minute clock. The earlier Colla attempt is the path that never did this. The product that name usually refers to is Kolla. This email describes a bridge they built themselves.",
+      links: [
+        ["Dentrix", "https://www.dentrix.com/"],
+        ["Kolla, the connector they tried", "https://www.getkolla.com/"],
+        ["DigitalOcean Droplets, where Ava runs", "https://www.digitalocean.com/products/droplets"]
+      ]
+    }
+  };
+
+  const detailKicker = document.getElementById("detail-kicker");
+  const detailTitle = document.getElementById("detail-title");
+  const detailBody = document.getElementById("detail-body");
+  const detailLinks = document.getElementById("detail-links");
+
+  function show(key) {
+    const item = briefs[key];
+    detailKicker.textContent = item.kicker;
+    detailTitle.textContent = item.title;
+    detailBody.textContent = item.body;
+    detailLinks.replaceChildren();
+    for (const [label, href] of item.links) {
+      const a = document.createElement("a");
+      a.href = href;
+      a.target = "_blank";
+      a.rel = "noreferrer";
+      a.textContent = label;
+      detailLinks.appendChild(a);
+    }
+    document.querySelectorAll(".branch").forEach((node) => {
+      const on = node.dataset.key === key;
+      node.classList.toggle("open", on);
+      node.querySelector(".arm").classList.toggle("active", on);
+    });
+  }
+
+  document.getElementById("branches").addEventListener("click", (event) => {
+    const branch = event.target.closest(".branch");
+    if (!branch) return;
+    show(branch.dataset.key);
+  });
+
+  show("listed");
+</script>
+</body>
+</html>
